@@ -94,6 +94,8 @@ glam - Simple room using a cube map as the background.
 <div id="container" style="width:95%; height:100%;position:absolute;">
 <glam>
   <scene>
+    <renderer type="cardboard"></renderer>
+    <controller type="deviceOrientation"></controller>
     <camera x='0' y='10' z='3000' fov='45deg' near='.01' far='100000'></camera>
 	<background id="sb1" class="room"></background>
   </scene>
