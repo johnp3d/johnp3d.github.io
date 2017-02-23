@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="libs/jquery-1.9.1/jquery-1.9.1.js"></script>
+<script src="libs/glam/glam.js" ></script>
+<title>glam - tree ornaments</title>
+
+<style>
+	body{
+		margin: 0px;
+		background-color: #2d2;
+	}
+
+	.room {
+		cube-image-right:url(textures/cubemap/room/px.jpg);
+		cube-image-left:url(textures/cubemap/room/nx.jpg);
+		cube-image-top:url(textures/cubemap/room/py.jpg);
+		cube-image-bottom:url(textures/cubemap/room/ny.jpg);
+		cube-image-front:url(textures/cubemap/room/pz.jpg);
+		cube-image-back:url(textures/cubemap/room/nz.jpg);
+	}
+
+    .red    {color:#dd0000;}
+    .silver {color:#ffffff;}
+    .cyan   {color:#22ddcc;}
+    .gold   {color:#ffcc66;}
+    .purple {color:#882288;}
+    .blue   {color:#2222ff;}
+    .green  {color:#1f7c35;}
+    .orange {color:#ff6a00;} 
+
+	#sb1 {
+		background-type:box;
+	}
+	
+</style>
+<script>
+
+function addOrnaments(scene) {
+
+    var y = -200, s = 12, i = 0, a = 0, j = 0, k = 0, r = 15, n = 1, clr;
+    for (i = 0; i < 7; i++) {
+        y -= 2*s; s *= 1.5; y -= 2*s;
+        r *= 1.8;
+        for (j = 0; j < n; j++) {
+            var sphereelt = document.createElement('sphere');
+
+           // Chrismas
+            //switch (i) {
+            //    case 0: clr='red';    break;
+            //    case 1: clr='silver'; break;
+            //    case 2: clr='cyan';   break;
+            //    case 3: clr='gold';   break;
+            //    case 4: clr='purple'; break;
+            //    case 5: clr='blue';   break;
+            //    case 6: clr='green';  break;
+            //}
+            // St. Patrick's Day
+            clr = (i & 1) ? 'orange' : 'green';
+
+            sphereelt.setAttribute('radius', (i === 0 ? 1.5 * s : s));
+            
+            a = (j/n) * (2 * Math.PI);
+            sphereelt.setAttribute('y', '' + (i < 4 ? y : j & 1 ? y : y - 0.5 * s));
+            sphereelt.setAttribute('x', '' + (i === 0 ? 0 : r * Math.cos(a)));
+            sphereelt.setAttribute('z', '' + (i === 0 ? 0 : r * Math.sin(a)));
+	    
+		    sphereelt.setAttribute('class', "room " + clr);
+
+		    scene.appendChild(sphereelt);
+		    k++;
+        }
+
+        n += ( i === 3) ? 1 : 2;
+    }
+}
+
+var vrOn = true;
+function toggleVR() {		
+    vrOn = !vrOn;
+	if (vrOn)
+	{
+			
+	}
+	else
+	{
+			
+	}
+}
+
+function initControls() {
+	$("#vrCheckbox").click(
+		function() { toggleVR(); }
+	);
+}
+
+$(document).ready(function(){
+
+	glam.ready();
+
+	var scene = document.getElementsByTagName('scene')[0];
+	addOrnaments(scene);
+});
+
+</script>
+</head>
+<body>
+<!-- 
+glam - Simple room using a cube map as the background.
+ -->
+<h1 class="green">Happy St. Patrick's Day (la fhéile pádraig shona daoibh) </h1>
+Texture 
+<input type="checkbox" checked id="vrCheckbox"></input>
+<div id="container" style="width:95%; height:100%;position:absolute;">
+<glam>
+  <scene>
+    <!-- renderer type="cardboard"></-->
+    <controller type="deviceOrientation"></controller>
+    <camera x='0' y='10' z='3000' fov='45deg' near='.01' far='100000'></camera>
+	<background id="sb1" class="room"></background>
+  </scene>
+</glam>
+</div>
+
+</body>
+</html>
