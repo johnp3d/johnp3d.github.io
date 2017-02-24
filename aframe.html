@@ -6,13 +6,19 @@
 <body>
     <a-scene>
     <a-assets>
-      <img id="texture" src="textures/FLKeys.jpg" />  
+      <img id="texture" src="textures/FLKeys.jpg" /> 
+      <img id="happy" src="textures/happy.jpg" /> 
     </a-assets>
         <a-box  width="1" height="1" depth="1"
-            position="0 0 0"
-            rotation="45 0 0"
+            position="1.5 1 0"
+            rotation="30 0 0"
             scale="2 2 2"
             src="#texture"></a-box>
+         <a-box  width="1" height="1" depth="1"
+            position="-1.5 1 0"
+            rotation="30 0 0"
+            scale="2 2 2"
+            src="#happy"></a-box>
     </a-scene>
 </body>
 </html>
