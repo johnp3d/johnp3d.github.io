@@ -10,15 +10,34 @@
       <img id="happy" src="textures/happy.jpg" /> 
     </a-assets>
         <a-box  width="1" height="1" depth="1"
-            position="1.5 1 0"
+            position="1.5 1.5 0"
             rotation="30 0 0"
             scale="2 2 2"
-            src="#texture"></a-box>
+            src="#texture">
+            <a-animation attribute="rotation" repeat="indefinite" to="360 0 0"></a-animation>    
+         </a-box>
          <a-box  width="1" height="1" depth="1"
-            position="-1.5 1 0"
+            position="-1.5 1.5 0"
             rotation="30 0 0"
             scale="2 2 2"
-            src="#happy"></a-box>
+            src="#happy">
+            <a-animation attribute="position" repeat="indefinite" to="-3 1.5 2"></a-animation>
+            <a-animation attribute="rotation" repeat="indefinite" to="30 180 0"></a-animation>    
+        </a-box>
+        <a-box  width="1" height="1" depth="1"
+            position="1.5 1.5 10"
+            rotation="30 0 0"
+            scale="2 2 2"
+            src="#texture">
+            <a-animation attribute="rotation" repeat="indefinite" to="360 0 0"></a-animation>    
+         </a-box>
+         <a-box  width="1" height="1" depth="1"
+            position="-1.5 1.5 10"
+            rotation="30 0 0"
+            scale="2 2 2"
+            src="#happy">
+            <a-animation attribute="rotation" repeat="indefinite" to="30 180 0"></a-animation>    
+        </a-box>
     </a-scene>
 </body>
 </html>
