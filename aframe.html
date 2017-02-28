@@ -15,15 +15,24 @@
             scale="2 2 2"
             src="#texture">
             <a-animation attribute="rotation" repeat="indefinite" to="360 0 0"></a-animation>    
+            <!-- add an event to scale down on mouse over -->
+            <!-- comment it out to use Javascript instead 
+            <a-event name="mouseenter" scale="0.3 0.3 0.3"></a-event> 
+            -->
          </a-box>
-         <a-box  width="1" height="1" depth="1"
+         <a-box  id="HappyBox1"
+            width="1" height="1" depth="1"
             position="-1.5 1.5 0"
             rotation="30 0 0"
             scale="2 2 2"
             src="#happy">
-            <a-animation attribute="position" repeat="indefinite" to="-3 1.5 2"></a-animation>
+            <a-animation attribute="position" begin="click" repeat="indefinite" to="-3 1.5 2"></a-animation>
             <a-animation attribute="rotation" repeat="indefinite" to="30 180 0"></a-animation>    
         </a-box>
+        <!-- add a camera and cursor to position it for clicking above --> 
+        <a-camera position = "0 3 5">
+            <a-cursor color ="#FF0099" />
+        </a-camera>
         <a-box  width="1" height="1" depth="1"
             position="1.5 1.5 10"
             rotation="30 0 0"
@@ -39,5 +48,11 @@
             <a-animation attribute="rotation" repeat="indefinite" to="30 180 0"></a-animation>    
         </a-box>
     </a-scene>
+    <script>
+        var box = document.querySelector( '#HappyBox1');
+        box.addEventListener( "mouseenter", function() {
+            box.setAttribute( "scale", { x: 1, y: 3, z: 2 });
+        });
+    </script>
 </body>
 </html>
