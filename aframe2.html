@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://aframe.io/releases/0.2.0/aframe.min.js"></script>
+    </head>
+<body>
+    <a-scene>
+        <a-assets>
+            <a-asset-item id="object" src="models/aztec-temple.obj"></a-asset-item>
+            <a-asset-item id="material" src="models/aztec-temple.mtl"></a-asset-item>
+        </a-assets>
+        <a-entity position="5 35 -15" rotation="-15 0 0">
+            <a-camera ></a-camera>
+            <a-animation attribute="rotation" easing="ease-in-out-cubic" delay="1000" dur="8000" to="-15 170 0"></a-animation>
+        </a-entity>
+        <a-obj-model src="#object" mtl="#material"></a-obj-model>
+         <a-sky src="textures/desert.jpg" color="#FFFFAA"></a-sky>
+    </a-scene>
+    </body>
+</html>
