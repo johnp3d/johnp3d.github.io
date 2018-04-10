@@ -8,7 +8,7 @@ function init() {
 		50, // field of view
 		window.innerWidth / window.innerHeight, // aspect ratio
 		1, // near clipping plane
-		6000 // far clipping plane
+		10000 // far clipping plane
 	);
     camera.position.z = 3500;
     camera.position.y = 1500;
@@ -67,6 +67,31 @@ function init() {
     scene.add( gridXZ );
     scene.add( gridXY );
     scene.add( gridYZ );
+
+    // Walls & Floor
+    var wallMat = new THREE.MeshBasicMaterial({
+        color: 0xeeeeee,
+        transparent: false,
+        side: THREE.FrontSide
+    });
+    var floorMat = new THREE.MeshBasicMaterial({
+        color: 0xeeeeee,
+        transparent: false,
+        side: THREE.BackSide
+    });
+    
+    var wallXY = new THREE.Mesh( new THREE.PlaneGeometry( size, size, 2, 2 ), wallMat );
+    var wallYZ = new THREE.Mesh( new THREE.PlaneGeometry( size, size, 2, 2 ), wallMat );
+    var floorXZ = new THREE.Mesh( new THREE.PlaneGeometry( size, size, 2, 2 ), floorMat );
+    wallXY.position.z = -1005;
+    wallYZ.rotation.y = Math.PI / 2;
+    wallYZ.position.x = -1005;
+    floorXZ.rotation.x = Math.PI / 2;
+    floorXZ.position.y = -1005;
+
+    scene.add( wallXY );
+    scene.add( wallYZ );
+    scene.add( floorXZ );
 
     // Create text geometry.
     var createTextGeometry = function( text, font ) {
