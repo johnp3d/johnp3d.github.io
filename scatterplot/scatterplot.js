@@ -1,7 +1,52 @@
+// Gui helpers
+function handleColorChange( color1, color2 ) {
+	return function ( value ) {
+		if ( typeof value === 'string' ) {
+			value = value.replace( '#', '0x' );
+		}
+        color1.setHex( value );
+        if ( color2 ) {
+            color2.setHex( value ); 
+        }
+	};
+}
+
+function handleVisibleChange( show1, show2 ) {
+	return function ( value ) {
+        show1 = value;
+        if ( show2 ) {
+            show2 = value; 
+        }
+	};
+}
+
+function guiScene( gui, scene, renderer, wallMat, floorMat, particleMat ) {
+var sceneFolder = gui.addFolder( 'Scene' );
+	var data = {
+        background: '#888888',
+        //show_walls: wallMat.visible,
+        walls: wallMat.color.getHex()
+	};
+	var color = new THREE.Color();
+	var colorConvert = handleColorChange( color );
+
+	sceneFolder.addColor( data, 'background' ).onChange( function ( value ) {
+		colorConvert( value );
+		renderer.setClearColor( color.getHex() );
+    });
+    
+    sceneFolder.addColor( data, 'walls' ).onChange( handleColorChange( wallMat.color, floorMat.color ));
+    //sceneFolder.add( data, 'show_walls' ).onChange( handleVisibleChange( wallMat.visible, floorMat.visible ));
+    sceneFolder.add( wallMat, 'visible' );
+    sceneFolder.add( floorMat, 'visible' );
+    sceneFolder.add( particleMat, 'size', 20, 200 );
+}
+
 function init() {
      var stats = new Stats();
     // render performance stats using github.com/mrdoob/stats.js
     /* document.body.appendChild( stats.dom ); */
+    var gui = new dat.GUI(); // UI controls
 
 	// camera
 	var camera = new THREE.PerspectiveCamera(
@@ -70,7 +115,7 @@ function init() {
 
     // Walls & Floor
     var wallMat = new THREE.MeshBasicMaterial({
-        color: 0xeeeeee,
+        color:  0xeeeeee,
         transparent: false,
         side: THREE.FrontSide
     });
@@ -157,14 +202,14 @@ function init() {
 
     }); //end load function
 
-
 	// renderer
 	var renderer = new THREE.WebGLRenderer();
 	renderer.setSize(window.innerWidth, window.innerHeight);
 
 	renderer.setClearColor('rgb(200, 200, 200)');
-
-	var controls = new THREE.OrbitControls( camera, renderer.domElement );
+    var controls = new THREE.OrbitControls( camera, renderer.domElement );
+    
+    guiScene( gui, scene, renderer, wallMat, floorMat, particleMat );
 
 	document.getElementById('webgl').appendChild(renderer.domElement);
 
