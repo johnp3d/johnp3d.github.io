@@ -230,4 +230,10 @@ function update(renderer, scene, camera, controls, stats) {
 	});
 }
 
-var scene = init();
+if (Detector.webgl) {
+    var scene = init();
+} else {
+    var warning = Detector.getWebGLErrorMessage();
+    document.getElementById('container').appendChild(warning);
+}
+
