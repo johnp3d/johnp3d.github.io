@@ -11,16 +11,7 @@ function handleColorChange( color1, color2 ) {
 	};
 }
 
-function handleVisibleChange( show1, show2 ) {
-	return function ( value ) {
-        show1 = value;
-        if ( show2 ) {
-            show2 = value; 
-        }
-	};
-}
-
-function guiScene( gui, scene, renderer, wallMat, floorMat, particleMat ) {
+function guiScene( gui, scene, renderer, wallMat, particleMat ) {
 var sceneFolder = gui.addFolder( 'Scene' );
 	var data = {
         background: '#888888',
@@ -35,10 +26,8 @@ var sceneFolder = gui.addFolder( 'Scene' );
 		renderer.setClearColor( color.getHex() );
     });
     
-    sceneFolder.addColor( data, 'walls' ).onChange( handleColorChange( wallMat.color, floorMat.color ));
-    //sceneFolder.add( data, 'show_walls' ).onChange( handleVisibleChange( wallMat.visible, floorMat.visible ));
+    sceneFolder.addColor( data, 'walls' ).onChange( handleColorChange( wallMat.color ));
     sceneFolder.add( wallMat, 'visible' );
-    sceneFolder.add( floorMat, 'visible' );
     sceneFolder.add( particleMat, 'size', 20, 200 );
 }
 
@@ -119,19 +108,14 @@ function init() {
         transparent: false,
         side: THREE.FrontSide
     });
-    var floorMat = new THREE.MeshBasicMaterial({
-        color: 0xeeeeee,
-        transparent: false,
-        side: THREE.BackSide
-    });
     
     var wallXY = new THREE.Mesh( new THREE.PlaneGeometry( size, size, 2, 2 ), wallMat );
     var wallYZ = new THREE.Mesh( new THREE.PlaneGeometry( size, size, 2, 2 ), wallMat );
-    var floorXZ = new THREE.Mesh( new THREE.PlaneGeometry( size, size, 2, 2 ), floorMat );
+    var floorXZ = new THREE.Mesh( new THREE.PlaneGeometry( size, size, 2, 2 ), wallMat );
     wallXY.position.z = -1005;
     wallYZ.rotation.y = Math.PI / 2;
     wallYZ.position.x = -1005;
-    floorXZ.rotation.x = Math.PI / 2;
+    floorXZ.rotation.x = -Math.PI / 2;
     floorXZ.position.y = -1005;
 
     scene.add( wallXY );
@@ -209,7 +193,7 @@ function init() {
 	renderer.setClearColor('rgb(200, 200, 200)');
     var controls = new THREE.OrbitControls( camera, renderer.domElement );
     
-    guiScene( gui, scene, renderer, wallMat, floorMat, particleMat );
+    guiScene( gui, scene, renderer, wallMat, particleMat );
 
 	document.getElementById('webgl').appendChild(renderer.domElement);
 
