@@ -1,3 +1,6 @@
+// Famous Fisher's Iris Dataset
+// https://archive.ics.uci.edu/ml/datasets/Iris
+// Formatted to be easier to read from JavaScript
 let irisColumnNames = ["sepal_length","sepal_width","petal_length","petal_width","species"];
 let irisCategories = ["setosa", "versicolor", "virginica" ];
 let irisCSV = [

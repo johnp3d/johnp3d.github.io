@@ -1,3 +1,5 @@
+// Creates a 3D Scatterplot from a simple column based dataset.
+
 // x, y, z, color category  
 let simpleData = [ 
     { name: "X data", min: 1, max: 10, values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] },
@@ -73,7 +75,6 @@ function setIrisColumnValues( irisData ) {
 }
 
 // Convert Raw Iris csv in arrays in csvIris.js to the column format.
-
 function convertIris(){
     let nRows = irisCSV.length;
     let irisData = [];
@@ -130,13 +131,11 @@ function replaceTitles( columns ) {
     // Z Axis title.
     let zAxisTitle = scene.getObjectByName('zAxisTitle');
     zAxisTitle.geometry = createTextGeometry( zColumnName, loadedFont );
-
 }
 
 function changeData() {
     let dataSelector = document.getElementById("select-data");
     if ( dataSelector.selectedIndex === 1 ) {
-        //alert( "Random" );
         columns = generateRandom();
     }  else {
         columns = convertIris(); // TODO: cache once converted?
@@ -158,11 +157,6 @@ function changeData() {
     particleSystem.name = 'particleSystem';
 
     replaceTitles( columns ); 
-    //Try to edit the title in place
-    //let mainTitle = scene.getObjectByName('mainTitle');
-    //let mainTitleGeo = mainTitle.geometry;
-    //mainTitle.geometry = createTextGeometry( "Random Data", loadedFont );
- 
 }
 
 // Calculate Mesh Coordinates and Colors.
@@ -259,7 +253,6 @@ function makeVertices( columns ) {
     let xCoords = columns[ 0 ].coords;
     let yCoords = columns[ 1 ].coords;
     let zCoords = columns[ 2 ].coords;
-    ////let colors = columns[ 3 ].colors;
 
     for ( let i = 0; i < particleCount; i++ ) {
         let particle = new THREE.Vector3( xCoords[ i ], yCoords[ i ], zCoords[ i ]);
@@ -274,45 +267,11 @@ function makeColors( columns ) {
 } 
 
 function makeParticleGeo( columns ) {
- /*   
-    scaleColumns( columns );
-    setColors( columns );
-
-    let particleGeo = new THREE.Geometry();
-    let ball = new THREE.TextureLoader().load('./img/ball.png');
-    let particleCount = columns[ 0 ].values.length;
-    let xCoords = columns[ 0 ].coords;
-    let yCoords = columns[ 1 ].coords;
-    let zCoords = columns[ 2 ].coords;
-    let colors = columns[ 3 ].colors;
-
-    for ( let i = 0; i < particleCount; i++ ) {
-        let particle = new THREE.Vector3( xCoords[ i ], yCoords[ i ], zCoords[ i ]);
-        particleGeo.vertices.push( particle );
-    }
- */ 
-    ////colors = makeColors( columns );
-    ////vertices =  makeVertices ( columns);
-
     let particleGeo = new THREE.Geometry();
      
-    particleGeo.colors = makeColors( columns );
     particleGeo.vertices = makeVertices( columns );
-/*
-    let ball = new THREE.TextureLoader().load('./img/ball.png');
-    let particleMat = new THREE.PointsMaterial({
-        //color: 'rgb(5, 5, 200)',
-        vertexColors: THREE.VertexColors,
-        size: 100,
-        //particle texture...
-        map: ball,
-        alphaTest: 0.7,
-        transparent: true,
-        depthWrite: true
-    });
-    */
-   // var particleSystem = new THREE.Points( particleGeo, particleMat );
-   // particleSystem.name = 'particleSystem';
+    particleGeo.colors = makeColors( columns );
+
     return particleGeo;
 }
 
@@ -350,60 +309,6 @@ function init() {
     camera.position.z = 3500;
     camera.position.y = 1500;
     
- /*   
-    var particleGeo = new THREE.Geometry();
-    var ball = new THREE.TextureLoader().load('./img/ball.png');
- */
-/* Random data
-    var particleCount = 1000;
-    var colorChoices = [], colors = [];
-    for ( var i = 0; i < 12; i++ ) {
-        colorChoices[ i ] = new THREE.Color( 0xffffff );
-		colorChoices[ i ].setHSL( i / 12, 1, 0.5 );
-    }
-
-    for ( var i = 0; i < particleCount; i++ ) {
-        var particle = new THREE.Vector3();
-        
-        particle.x = 1900 * Math.random() - 1000;
-        particle.y = 1900 * Math.random() - 1000
-        particle.z = 1900 * Math.random() - 1000;
-
-        colors[ i ] = colorChoices[ i % 12 ];
-    
-        particleGeo.vertices.push( particle );
-    }
-    particleGeo.colors = colors;
-*/
-/*
-    scaleColumns( columns );
-    setColors( columns );
- 
-    let particleCount = columns[ 0 ].values.length;
-    let xCoords = columns[ 0 ].coords;
-    let yCoords = columns[ 1 ].coords;
-    let zCoords = columns[ 2 ].coords;
-    let colors = columns[ 3 ].colors;
-
-    for ( let i = 0; i < particleCount; i++ ) {
-        let particle = new THREE.Vector3( xCoords[ i ], yCoords[ i ], zCoords[ i ]);
-        particleGeo.vertices.push( particle );
-    }
-    particleGeo.colors = colors;
-
-    var particleMat = new THREE.PointsMaterial({
-        //color: 'rgb(5, 5, 200)',
-        vertexColors: THREE.VertexColors,
-        size: 100,
-        //particle texture...
-        map: ball,
-        alphaTest: 0.7,
-        transparent: true,
-        depthWrite: true
-    });
-    var particleSystem = new THREE.Points( particleGeo, particleMat );
-    particleSystem.name = 'particleSystem';
-*/
     let particleGeo = makeParticleGeo( columns );
     let particleMat =  makeParticleMaterial();
     let particleSystem = new THREE.Points( particleGeo, particleMat );
@@ -445,20 +350,7 @@ function init() {
     scene.add( wallXY );
     scene.add( wallYZ );
     scene.add( floorXZ );
-/*
-    // Create text geometry.
-    var createTextGeometry = function( text, font ) {
-        var textGeom = new THREE.BufferGeometry();
-        var shapes = font.generateShapes( text, 70, 2 );
-        var geometry = new THREE.ShapeGeometry( shapes );
-        geometry.computeBoundingBox();
-        var xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
-        geometry.translate( xMid, 0, 0 );
-        // make shape ( N.B. edge view not visible )
-        textGeom.fromGeometry( geometry );
-        return textGeom;
-    };
-*/
+
     // Create and add titles
     var loader = new THREE.FontLoader();
     loader.load( 'font/helvetiker_regular.typeface.json', function ( font ) {
