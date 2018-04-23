@@ -3,22 +3,30 @@
 <head>
 	<title>3D Scatterplot Demo</title>
 	<style type="text/css">
-		html, body {margin: 0; padding: 0; overflow:visible}
+		html, body {margin: 0; padding: 0; overflow:hidden}
 		#container { background-color: rgb(216, 224, 226); 
 			color:black; text-align: center; font:200; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    		width: 100%; height: 2.5rem; display:block }
+    		width: 100%; height:100%; height: 1.8rem; display:block }
+		label { margin-left: 1rem;}	
+		#select-dataset { margin-left: 3rem; margin-top: 1px; }	
 	</style>
 </head>
 <body>
-	<div id="container">3D Scatterplot, by johnp3D.
-		<div id="webgl"></div>
-	</div>
+	<div id="container">3D Scatterplot, by johnp3D</div>
+	<label>dataset: </label>
+	<select id="select-data" onchange="changeData()">
+			<option>Iris</option>
+			<option>Random Data</option>
+	</select>
+	<div id="webgl"></div>
+	<!-- </div> -->
 	<script src="./lib/Detector.js"></script>
     <script src="./lib/stats.js"></script>
 	<script src="./lib/Tween.min.js"></script>
 	<script src="./lib/dat.gui.min.js"></script>
 	<script src="./lib/three.js"></script>
 	<script src="./lib/OrbitControls.js"></script>
+	<script src="./data/csvIris.js"></script>
 	<script src="./scatterplot.js"></script>
 </body>
 </html>
