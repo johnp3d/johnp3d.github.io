@@ -1,0 +1,165 @@
+// Exports current table into an HTML file.
+Names Default to Here( 1 );
+// This may take a while for large tables, so first set up a progress meter.
+// See: https://community.jmp.com/blogs/Uncharted/2016/02/26/progress-bar 
+progress = New Namespace( "progress" );
+progress:init = Function( {workload},
+	progress:TotalWork = workload;
+	progress:Current = -1;
+	progress:tick = Tick Seconds();
+	progress:Window = New Window( "progress",
+		H List Box(
+			Spacer Box( size( 20, 20 ) ),
+			progress:busy = Busy Light( <<size( 60, 60 ) ),
+			Border Box( Left( 20 ), Right( 20 ), top( 20 ), bottom( 20 ),
+				H List Box(
+					progress:left = Spacer Box( color( RGB Color( 20, 200, 20 ) ) ),
+					progress:right = Spacer Box( color( RGB Color( 100, 100, 100 ) ) ),
+					Spacer Box( size( 20, 10 ) ),
+					progress:text = Text Box( "0" )
+				)
+			)
+		)
+	);
+	progress:set( 0 );
+);
+ 
+progress:set = Function( {workdone},
+	{now = Tick Seconds(), pct = Round( 100 * workdone / progress:TotalWork )},
+	If( now - progress:tick > 1 / 30,
+		progress:tick = now;
+		If( pct != progress:Current,
+			progress:Current = pct;
+			progress:left << size( progress:Current, 20 );
+			progress:right << size( 100 - progress:Current, 20 );
+			progress:text << settext( Char( pct ) || "%" );
+		);
+		progress:busy << advance;
+		Wait( 0 );
+	)
+);
+ 
+progress:term = Function( {},
+  progress:Window << closeWindow
+);
+
+progress:init( 5 + N Row() );
+progressAmount = 0;
+
+// Create HTML file header and table styling.
+dt = Current Data Table();
+dataTableName = ( dt << Get Name()); 
+headerLinesList = {
+  "<!DOCTYPE html>",
+  "<html>",
+  "<head>",
+  "  <title>" || dataTableName || "</title>",
+  "  <style>",
+  "    table, th, td {",
+  "	     font-family: Arial, Helvetica, sans-serif;",
+  "      border: 1px solid gray;",
+  "      border-collapse:collapse;",
+  "      padding: 2px 4px 2px 4px;",
+  "    }",
+  "    th { background-color: #ebeeef; }",
+  "    tr { background-color: #fdfdff; }",
+  "    tr:hover { background-color: #fef1f0; }",
+  "    body { background-color: #dbe0e3; }", 
+  "  </style>",
+  "</head>",
+  // When the page loads, the JavaScript code below will add
+  // hover labels to the cells showing the column name an row number.
+  // If page loading speed is a important, hover labels can be added in 
+  // JSL instead as the commented out code in the For Each Row loop below, 
+  // but it will take longer to export, and create larger HTML files, which 
+  // will affect page download and load times. 
+  //"<body>", // Uncomment this line and comment out the rest of these string to 
+  // disable the JavaScript code.
+  "<body onload=\!"hoverLabels()\!">",
+  "<script>",
+  "function hoverLabels() {",
+  " var i, j, n, m, colNames = [], rows, nRows, cells,",
+  " cols = document.querySelectorAll( \!"th\!" ),",
+  " nCols = cols.length;",
+  " for ( i = 0; i < nCols; i++ ) {",
+  "   colNames[ i ] = cols[ i ].innerHTML;",
+  " }",
+  " rows = document.querySelectorAll( \!"tr\!" );",
+  " nRows = rows.length;",
+  " for ( i = 1; i < nRows ; i++ ) {", 
+  "   cells = rows[ i ].querySelectorAll( \!"td\!" );",
+  "   for ( j = 0; j < nCols ; j++ ) {",
+  "     cells[ j ].title = colNames[ j ] + \!"[\!" + i + \!"]\!";",
+  "   }",
+  " }",
+  "}",
+  "</script>"
+   };
+ // Combine headerLinesList into a single string.
+header = Concat Items( headerLinesList, "\!n" );
+  
+// Create HTML Table. 
+tableHeader = "\!n"
+ || "<TABLE>\!n"
+ || "  <TR>\!n";
+
+// Add the column names.
+For( cc = 1, cc <= N Col(), cc++,
+	Insert Into( tableHeader, "    <TH>" || ( Column( cc ) << Get Name()) || "</TH>\!n" );
+);
+Insert Into( tableHeader, "  </TR>\!n" );
+
+progress:set( progressAmount++ );
+
+// Create table rows of data values.
+rowsList = {};
+For Each Row(
+	r = "  <TR>";
+	For( cc = 1, cc <= N Col(), cc++,
+		col = Column( dt, cc, formatted );
+		colName = col << GetName();
+		// This one does not provide cell tooltips, but it exports faster. 
+		Insert into( r, "<TD>" || col[ Row() ] || "</TD>" )
+		// The following adds the column name as a hover label. 
+		//Insert into( r, "<TD title=\!"" || colName || "\!">" || col[Row()] || "</TD>" )
+	);
+	Insert into( r, "</TR>" );
+	// For JMP 12 and previous versions, build rowList in reverse order for performance.
+	// See: https://community.jmp.com/blogs/Uncharted/2016/03/24/fast-list
+	Insert into( rowsList, r, 1 );
+	progress:set( progressAmount++ );
+);
+
+// Combine rowsList into a single string.
+combinedRows = Concat Items( Reverse( rowsList ), "\!n" );
+progress:set( progressAmount++ );
+
+tableFooter = "\!n</TABLE>\!n";
+
+// Add HTML closing tags.
+footer = 
+	"</body>\!n"
+ || "</html>\!n";
+ 
+ // Combine all the pieces.
+ html = 
+	header
+ ||	tableHeader
+ || combinedRows
+ || tableFooter
+ || footer;
+ 
+ // Save it to a temp file and open it.
+ htmlFilename = Get Path Variable( "TEMP" ) || dataTableName || ".html";
+ write( "Exporting " || dataTableName || " to " ||  htmlFilename || "\!n" );
+ 
+ progress:set( progressAmount++ );
+ 
+ saveTextFile( htmlFilename, html );
+ progress:set( progressAmount++  );
+
+ web( "file:////" || htmlFilename );
+ 
+ progress:set( progressAmount++  );
+ progress:term();
+ 

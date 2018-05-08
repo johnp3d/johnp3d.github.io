@@ -1,0 +1,138 @@
+// Exports 4 columns into a specific JSON object to use in a 3D Scatterplot web application.
+
+Names Default to Here( 1 );
+// This may take a while for large tables, so first set up a progress meter.
+// See: https://community.jmp.com/blogs/Uncharted/2016/02/26/progress-bar 
+progress = New Namespace( "progress" );
+progress:init = Function( {workload},
+	progress:TotalWork = workload;
+	progress:Current = -1;
+	progress:tick = Tick Seconds();
+	progress:Window = New Window( "progress",
+		H List Box(
+			Spacer Box( size( 20, 20 ) ),
+			progress:busy = Busy Light( <<size( 60, 60 ) ),
+			Border Box( Left( 20 ), Right( 20 ), top( 20 ), bottom( 20 ),
+				H List Box(
+					progress:left = Spacer Box( color( RGB Color( 20, 200, 20 ) ) ),
+					progress:right = Spacer Box( color( RGB Color( 100, 100, 100 ) ) ),
+					Spacer Box( size( 20, 10 ) ),
+					progress:text = Text Box( "0" )
+				)
+			)
+		)
+	);
+	progress:set( 0 );
+);
+ 
+progress:set = Function( {workdone},
+	{now = Tick Seconds(), pct = Round( 100 * workdone / progress:TotalWork )},
+	If( now - progress:tick > 1 / 30,
+		progress:tick = now;
+		If( pct != progress:Current,
+			progress:Current = pct;
+			progress:left << size( progress:Current, 20 );
+			progress:right << size( 100 - progress:Current, 20 );
+			progress:text << settext( Char( pct ) || "%" );
+		);
+		progress:busy << advance;
+		Wait( 0 );
+	)
+);
+ 
+progress:term = Function( {},
+  progress:Window << closeWindow
+);
+
+progress:init( 5 + N Row() );
+progressAmount = 0;
+
+
+// Create the following JSON format for three numerical columns and one categorical column.
+// It's just an array of four objects - one per column.
+// x, y, z, color category  
+//let simpleData = [ 
+//    { name: "X data", min: 1, max: 10, values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] },
+//    { name: "Y data", min: 10, max: 100, values: [ 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 ] },
+//    { name: "Z data", min: -0.1, max: .7, values: [ -0.1, 0, .1, .3, .2, .4, .6, .5, .8, .7 ] },
+//    { name: "category", names: [ "category 1", "category 2", "category 3" ], values: [ 0, 0, 0, 0, 1, 1, 1, 2, 2, 2 ] },
+//];
+
+// If we were going to let the user pick columns we'd have to ask
+// for the column names. Lets assume fo now the columns are in the right order.
+//colX = <colname>
+//colY = <colname>
+//colZ = <colname>
+//cat = <colname>
+
+// Create JSON Array.
+dt = Current Data Table();
+dataTableName = ( dt << Get Name()); 
+  
+// Create JSON Array as a string. 
+jsonString = "let simpleData = [\!n";
+
+// Add the columns. Here's an example of one small column.
+//{ name: "X data", min: 1, max: 10, values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] },
+For( cc = 1, cc <= 4, cc++,
+    col = Column( dt, cc, formatted );
+	colName = col << GetName();
+    colMin = 1; // Is there a c++ function to give us this or should we calculate it?
+    colMax = 10; // same as above
+    valuesString = "values: [";
+    // There may already be a function to give us the column values as a string.
+    For Each Row( 
+        Insert into( valuesString, col[ Row() ] || ", " )
+    );
+    Insert into( valuesString, "]" ); 
+
+    nameString = "name : \!"" || colName || "\!"; 
+    minString = "min: " || colMin";
+    maxString = "max: " || colMax";
+
+    colString = "{ " || nameString || minString || maxString || valuesString || " },\!n";
+
+	Insert Into( jsonString, colString );
+);
+// Close the JSON array.
+Insert Into( jsonString, "];" );
+
+progress:set( progressAmount++ );
+/*
+// Create table rows of data values.
+rowsList = {};
+For Each Row(
+	r = "  <TR>";
+	For( cc = 1, cc <= N Col(), cc++,
+		col = Column( dt, cc, formatted );
+		colName = col << GetName();
+		// This one does not provide cell tooltips, but it exports faster. 
+		Insert into( r, "<TD>" || col[ Row() ] || "</TD>" )
+		// The following adds the column name as a hover label. 
+		//Insert into( r, "<TD title=\!"" || colName || "\!">" || col[Row()] || "</TD>" )
+	);
+	Insert into( r, "</TR>" );
+	// For JMP 12 and previous versions, build rowList in reverse order for performance.
+	// See: https://community.jmp.com/blogs/Uncharted/2016/03/24/fast-list
+	Insert into( rowsList, r, 1 );
+	progress:set( progressAmount++ );
+);
+*/
+// Combine rowsList into a single string.
+//combinedRows = Concat Items( Reverse( rowsList ), "\!n" );
+progress:set( progressAmount++ );
+
+ // Save it to a temp file and open it.
+ jsFilename = Get Path Variable( "TEMP" ) || dataTableName || ".js";
+ write( "Exporting " || dataTableName || " to " ||  jsFilename || "\!n" );
+ 
+ progress:set( progressAmount++ );
+ 
+ saveTextFile( jsFilename, js );
+ progress:set( progressAmount++  );
+
+ web( "file:////" || jsFilename );
+ 
+ progress:set( progressAmount++  );
+ progress:term();
+ 

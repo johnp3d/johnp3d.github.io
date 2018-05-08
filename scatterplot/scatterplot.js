@@ -8,6 +8,13 @@ let simpleData = [
     { name: "category", names: [ "category 1", "category 2", "category 3" ], values: [ 0, 0, 0, 0, 1, 1, 1, 2, 2, 2 ] },
 ];
 
+let carsData = [
+    { name : "Weight", min: 1695, max: 4285, values: [2700, 3265, 2935, 2670, 2790, 2895, 3640, 2880, 3350, 3325, 3465, 2640, 4285, 3545, 3480, 4025, 2655, 3110, 3320, 3855, 2485, 3280, 3195, 3630, 3570, 2975, 3065, 3450, 3385, 2270, 2885, 2935, 3080, 3735, 2300, 2670, 3145, 2560, 2780, 3665, 2345, 1845, 3850, 2850, 3310, 2695, 2870, 3015, 3190, 2750, 3610, 1695, 2255, 2455, 2920, 2260, 2170, 2710, 2345, 2885, 4000, 3930, 3695, 3780, 4040, 2780, 3480, 3735, 2210, 2690, 2440, 3020, 3315, 2285, 2745, 2185, 3110, 3415, 2775, 3350, 3185, 3200, 2390, 2275, 2920, 3690, 3220, 2645, 2765, 2575, 3000, 2840, 2350, 2900, 2775, 2995, 3065, 3295, 1900, 2935, 2295, 2485, 2920, 2885, 2390, 3480, 3470, 2075, 2680, 2190, 2215, 2270, 2330, 3460, 2985, 3140] },
+    { name : "Turning Circle", min: 32, max: 47, values: [37, 42, 39, 35, 35, 35, 39, 41, 43, 42, 41, 39, 44, 43, 42, 42, 38, 41, 41, 42, 38, 42, 42, 42, 43, 39, 41, 42, 42, 32, 38, 38, 42, 47, 40, 38, 39, 36, 39, 42, 37, 33, 45, 40, 44, 38, 38, 42, 41, 39, 38, 34, 35, 37, 41, 34, 32, 34, 35, 41, 42, 40, 42, 43, 45, 39, 39, 39, 33, 36, 36, 34, 37, 36, 39, 37, 41, 36, 38, 38, 38, 42, 38, 37, 39, 38, 41, 39, 42, 37, 39, 39, 35, 36, 37, 37, 40, 42, 32, 37, 35, 36, 39, 39, 36, 36, 40, 35, 34, 34, 35, 35, 35, 37, 37, 37] },
+    { name : "Displacement", min: 61, max: 350, values: [112, 163, 141, 121, 141, 152, 209, 151, 231, 231, 231, 151, 307, 273, 273, 262, 133, 191, 305, 305, 133, 350, 151, 191, 202, 153, 181, 202, 153, 90, 153, 135, 153, 202, 135, 153, 180, 97, 122, 182, 114, 81, 302, 140, 302, 133, 133, 153, 182, 141, 232, 61, 97, 97, 132, 91, 97, 125, 90, 143, 274, 242, 232, 302, 302, 133, 180, 181, 97, 133, 113, 159, 181, 97, 122, 90, 181, 143, 146, 180, 146, 180, 97, 97, 146, 146, 189, 151, 151, 116, 132, 107, 98, 165, 121, 121, 121, 163, 73, 135, 109, 109, 122, 132, 97, 180, 180, 89, 109, 109, 109, 109, 109, 129, 141, 141] },
+    { name : "Type", names: ["Compact", "Large", "Medium", "Small", "Sporty"], values: [3, 2, 2, 0, 0, 0, 2, 2, 1, 1, 2, 0, 1, 1, 2, 1, 0, 4, 4, 1, 0, 4, 2, 1, 2, 2, 0, 2, 1, 3, 4, 4, 2, 1, 3, 0, 2, 3, 4, 1, 3, 3, 1, 4, 4, 4, 4, 2, 2, 0, 2, 3, 3, 4, 0, 3, 4, 4, 3, 2, 2, 2, 2, 2, 1, 0, 2, 1, 4, 4, 3, 0, 2, 3, 0, 3, 0, 1, 4, 4, 1, 2, 4, 3, 0, 1, 2, 0, 2, 0, 2, 4, 3, 4, 0, 0, 2, 2, 3, 0, 3, 4, 0, 4, 3, 2, 4, 3, 4, 3, 3, 4, 3, 1, 0, 2, ]  }
+  ];
+
 function generateRandom() {
     let randomData = [ 
         { name: "Random X", min: Infinity, max: -Infinity, values: [] },
@@ -94,7 +101,7 @@ function convertIris(){
     return irisData;
 }
 
-let columns = convertIris(); /* simpleData; */
+let columns = carsData; // convertIris(); /* simpleData; */
 let loadedFont;
 
 // Create text geometry.
@@ -135,10 +142,11 @@ function replaceTitles( columns ) {
 
 function changeData() {
     let dataSelector = document.getElementById("select-data");
-    if ( dataSelector.selectedIndex === 1 ) {
-        columns = generateRandom();
-    }  else {
-        columns = convertIris(); // TODO: cache once converted?
+    
+    switch ( dataSelector.selectedIndex ) {
+    case 0:     columns = carsData;         break;
+    case 1:     columns = convertIris();    break; // TODO: cache once converted?
+    default:    columns = generateRandom(); break;
     }
     let particleSystem = scene.getObjectByName('particleSystem');
     let particleGeo = particleSystem.geometry;
@@ -385,8 +393,8 @@ function init() {
         let yAxisTitle = new THREE.Mesh(createTextGeometry( yColumnName, font ), axisTitleMat );
         yAxisTitle.name = 'yAxisTitle';
 
-        // Y Axis title.
-        let zAxisTitle = new THREE.Mesh(createTextGeometry( yColumnName, font ), axisTitleMat );
+        // Z Axis title.
+        let zAxisTitle = new THREE.Mesh(createTextGeometry( zColumnName, font ), axisTitleMat );
         zAxisTitle.name = 'zAxisTitle';
 
         // Place titles.
