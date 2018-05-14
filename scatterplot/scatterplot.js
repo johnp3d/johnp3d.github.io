@@ -103,11 +103,13 @@ function convertIris(){
 
 let columns = carsData; // convertIris(); /* simpleData; */
 let loadedFont;
+let labelMat;
 
 // Create text geometry.
-function createTextGeometry( text, font ) {
+function createTextGeometry( text, font, size ) {
+    var height = size || 70;
     var textGeom = new THREE.BufferGeometry();
-    var shapes = font.generateShapes( text, 70, 2 );
+    var shapes = font.generateShapes( text, height, 2 );
     var geometry = new THREE.ShapeGeometry( shapes );
     geometry.computeBoundingBox();
     var xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
@@ -140,6 +142,68 @@ function replaceTitles( columns ) {
     zAxisTitle.geometry = createTextGeometry( zColumnName, loadedFont );
 }
 
+function replaceAxesAndGrid( columns, size ) {
+
+    var xAxis = makeAxis( columns[ 0 ], size ); 
+    var yAxis = makeAxis( columns[ 1 ], size );
+    var zAxis = makeAxis( columns[ 2 ], size );
+    // var gridXZ = new AxisGrid([ zAxis, xAxis ], size );
+    // var gridXY = new AxisGrid([ yAxis, xAxis ], size );
+    // var gridYZ = new AxisGrid([ zAxis, yAxis ], size );
+
+    // XZ Grid.
+    let gridXZ = scene.getObjectByName('gridXZ');
+    scene.remove( gridXZ );
+    gridXZ = new AxisGrid([ zAxis, xAxis ], size );
+
+    // XY Grid.
+    let gridXY = scene.getObjectByName('gridXY');
+    scene.remove( gridXY );
+    gridXY = new AxisGrid([ yAxis, xAxis ], size );
+
+    // YZ Grid.
+    let gridYZ = scene.getObjectByName('gridYZ');
+    scene.remove( gridYZ );
+    gridYZ = new AxisGrid([ zAxis, yAxis ], size );
+
+    gridXZ.position.y = -1000;
+    gridXY.rotation.x = Math.PI / 2;
+    gridXY.position.z = -1000;
+    gridYZ.rotation.z = Math.PI / 2;
+    gridYZ.position.x = -1000;
+
+    gridXZ.name = "gridXZ";
+    gridXY.name = "gridXY";
+    gridYZ.name = "gridYZ";
+    scene.add( gridXZ );
+    scene.add( gridXY );
+    scene.add( gridYZ );
+
+    // X Axis labels.
+    let xAxisLabels = scene.getObjectByName('xAxisLabels');
+    // Remove label children and make new ones.
+    while ( xAxisLabels.children.length ) {
+        xAxisLabels.remove( xAxisLabels.children[ 0 ] );
+    }
+    makeTickLabels( xAxisLabels, "x", xAxis, loadedFont, labelMat );
+
+    // Y Axis labels.
+    let yAxisLabels = scene.getObjectByName('yAxisLabels');
+    // Remove label children and make new ones.
+    while ( yAxisLabels.children.length ) {
+        yAxisLabels.remove( yAxisLabels.children[ 0 ] );
+    }
+    makeTickLabels( yAxisLabels, "y", yAxis, loadedFont, labelMat );
+    
+    // Z Axis title.
+    let zAxisLabels = scene.getObjectByName('zAxisLabels');
+    // Remove label children and make new ones.
+    while ( zAxisLabels.children.length ) {
+        zAxisLabels.remove( zAxisLabels.children[ 0 ] );
+    }
+    makeTickLabels( zAxisLabels, "z", zAxis, loadedFont, labelMat );
+}
+
 function changeData() {
     let dataSelector = document.getElementById("select-data");
     
@@ -164,7 +228,8 @@ function changeData() {
     scene.add( particleSystem );
     particleSystem.name = 'particleSystem';
 
-    replaceTitles( columns ); 
+    replaceTitles( columns );
+    replaceAxesAndGrid( columns, res ); 
 }
 
 // Calculate Mesh Coordinates and Colors.
@@ -298,9 +363,119 @@ function makeParticleMaterial( columns ) {
     return particleMat;
 }
 
+function makeAxis( column, size ) {
+    // Determine a good major tick step.
+    // TODO: spreading/destructuring?
+    let max = column.max;
+    let min = column.min;
+    // Minimal increment to avoid round extreme values to be on the edge of the chart.
+    let epsilon = ( max - min ) / 1e6;
+    max += epsilon;
+    min -= epsilon;
+    let range = max - min;
+
+    // Target number of values to be displayed on the Y axis (it may be less).
+    let stepCount = 10;
+    // First approximation
+    let roughStep = range / ( stepCount - 1 );
+
+    // Set best step for the range
+    let goodNormalizedSteps = [ 1, 2, 5, 10 ]; // Keep the 10 at the end.
+
+    // Normalize rough step to find the normalized one that fits best.
+    let stepPower = Math.pow( 10, -Math.floor( Math.log10( Math.abs( roughStep ))));
+    let normalizedStep = roughStep * stepPower;
+
+    //var goodNormalizedStep = goodNormalizedSteps.First(n => n >= normalizedStep);
+    // Find first in goodNormalizedSteps such that n >= normalizedStep.
+    let i = 0;
+    while ( goodNormalizedSteps[ i ] < normalizedStep ) {
+        i++;
+    }
+    let step = goodNormalizedSteps[ i ] / stepPower;
+
+    // Determine the scale limits based on the chosen step.
+    let scaleMax = Math.ceil( max / step ) * step;
+    let scaleMin = Math.floor( min / step ) * step;
+
+    // convert to range -1000, 1000 
+    let nMajor = Math.ceil(( scaleMax - scaleMin ) / step ); 
+    console.log ( `${column.name}[${column.min},${column.max}]: ${nMajor} steps of size ${step} starting at ${scaleMin}`);    
+    let majorStep = step * size / ( scaleMax - scaleMin );
+    return { 
+        // scene coordinates used for positioning.
+        nMajor : nMajor, 
+        majorStart:  -size / 2,
+        majorStep: majorStep,
+        // world coords used for labeling.
+        worldStart: scaleMin,
+        worldStep: step  
+    };
+}
+
+function getDigitsOfPrecision( num ) {
+    let digitsAfterDecimal = num.toString().split('.')[ 1 ];
+    let digitsOfPrecision = 0; 
+    if ( digitsAfterDecimal ) {
+        digitsOfPrecision = digitsAfterDecimal.length; 
+    }
+    return digitsOfPrecision;
+}
+
+function makeTickLabels( axisGroup, whichAxis, axis, font, mat ) {
+    // TODO: To use billboard text, it might be better not to group the labels.
+    // Fix numbers like 0.60000000001
+    let digitsOfPrecision = getDigitsOfPrecision( axis.worldStep ); 
+    for( let i = 1; i < axis.nMajor; i++ ) {
+        let label = ( axis.worldStart + i * axis.worldStep );
+        if ( getDigitsOfPrecision( label ) > digitsOfPrecision + 1 ) {
+            label = label.toFixed( digitsOfPrecision );
+        }
+        let labelText = label.toString();
+        let axisLabel = new THREE.Mesh( createTextGeometry( labelText, font, 40 ), mat );
+        if ( whichAxis === "y" ) {
+            axisLabel.position.y = axis.majorStart + i * axis.majorStep;
+        } else {    
+            axisLabel.position.x = axis.majorStart + i * axis.majorStep;
+        }
+        axisGroup.add( axisLabel ); 
+    }
+}
+
+// Create and add axis tick labels.
+function addTickLabels( scene, whichAxis, axis, font, mat ) {
+
+    // Put labels in a group that can be positioned.
+    let axisGroup = new THREE.Object3D(); //create an empty container
+
+    makeTickLabels( axisGroup, whichAxis, axis, font, mat );
+
+    // Place labels.
+    switch( whichAxis ) {
+    case "x":
+        axisGroup.position.z =  1000;
+        axisGroup.position.y = -1000;
+        break;
+    case "y":
+        axisGroup.position.z =  1000;
+        axisGroup.position.x = -1000;
+        break;
+    case "z":
+    default:
+        axisGroup.position.x = -1000;
+        axisGroup.position.y =  1000;
+        axisGroup.rotation.y = Math.PI / 2;
+        break;
+    }
+
+    // Add labels.
+    axisGroup.name = whichAxis + "AxisLabels";
+    scene.add( axisGroup );
+}
+
 // scene
 var scene = new THREE.Scene();
-
+try {
 function init() {
      var stats = new Stats();
     // render performance stats using github.com/mrdoob/stats.js
@@ -324,16 +499,25 @@ function init() {
     scene.add( particleSystem );
 
     // Grids
-    var size = 2000;
+    var size = res;
     var step = 10;
-    var gridXZ = new THREE.GridHelper( size, step );
-    var gridXY = new THREE.GridHelper( size, step );
-    var gridYZ = new THREE.GridHelper( size, step );
+    // TODO: create a legend.
+    // TODO: redo the axes when the dataset changes.
+    var xAxis = makeAxis( columns[ 0 ], size ); 
+    var yAxis = makeAxis( columns[ 1 ], size );
+    var zAxis = makeAxis( columns[ 2 ], size );
+    var gridXZ = new AxisGrid([ zAxis, xAxis ], size );
+    var gridXY = new AxisGrid([ yAxis, xAxis ], size );
+    var gridYZ = new AxisGrid([ zAxis, yAxis ], size );
     gridXZ.position.y = -1000;
     gridXY.rotation.x = Math.PI / 2;
     gridXY.position.z = -1000;
     gridYZ.rotation.z = Math.PI / 2;
     gridYZ.position.x = -1000;
+
+    gridXZ.name = "gridXZ";
+    gridXY.name = "gridXY";
+    gridYZ.name = "gridYZ";
 
     scene.add( gridXZ );
     scene.add( gridXY );
@@ -372,12 +556,13 @@ function init() {
            // opacity: 0.8,
             side: THREE.DoubleSide
         });
+        labelMat = mainTitleMat; 
 
         let xColumnName = columns[0].name;
         let yColumnName = columns[1].name;
         let zColumnName = columns[2].name;
         let title = `${xColumnName} by ${yColumnName} by ${zColumnName}`;
-        let mainTitle = new THREE.Mesh(createTextGeometry( title, font ), mainTitleMat);
+        let mainTitle = new THREE.Mesh( createTextGeometry( title, font ), mainTitleMat );
         mainTitle.name = 'mainTitle';
         // X Axis title.
         let axisTitleMat = new THREE.MeshBasicMaterial({
@@ -386,15 +571,15 @@ function init() {
             opacity: 0.8,
             side: THREE.DoubleSide
         });
-        let xAxisTitle = new THREE.Mesh(createTextGeometry( xColumnName, font ), axisTitleMat );
+        let xAxisTitle = new THREE.Mesh( createTextGeometry( xColumnName, font ), axisTitleMat );
         xAxisTitle.name = 'xAxisTitle';
 
         // Y Axis title.
-        let yAxisTitle = new THREE.Mesh(createTextGeometry( yColumnName, font ), axisTitleMat );
+        let yAxisTitle = new THREE.Mesh( createTextGeometry( yColumnName, font ), axisTitleMat );
         yAxisTitle.name = 'yAxisTitle';
 
         // Z Axis title.
-        let zAxisTitle = new THREE.Mesh(createTextGeometry( zColumnName, font ), axisTitleMat );
+        let zAxisTitle = new THREE.Mesh( createTextGeometry( zColumnName, font ), axisTitleMat );
         zAxisTitle.name = 'zAxisTitle';
 
         // Place titles.
@@ -418,7 +603,12 @@ function init() {
         scene.add( yAxisTitle );
         scene.add( zAxisTitle );
 
-    }); //end load function
+        // Create and add tick labels.
+        addTickLabels( scene, "x", xAxis, font, mainTitleMat ); // TODO: Use a specific material for axis ticks.
+        addTickLabels( scene, "y", yAxis, font, mainTitleMat );
+        addTickLabels( scene, "z", zAxis, font, mainTitleMat );
+
+    }); // end font load function
 
 	// renderer
 	var renderer = new THREE.WebGLRenderer();
@@ -436,6 +626,9 @@ function init() {
 	return scene;
 }
 
+} catch {
+    alert("exception")
+}
 
 function update(renderer, scene, camera, controls, stats) {
     controls.update();
