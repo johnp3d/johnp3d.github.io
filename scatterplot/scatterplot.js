@@ -15,7 +15,7 @@ let carsData = [
     { name : "Type", names: ["Compact", "Large", "Medium", "Small", "Sporty"], values: [3, 2, 2, 0, 0, 0, 2, 2, 1, 1, 2, 0, 1, 1, 2, 1, 0, 4, 4, 1, 0, 4, 2, 1, 2, 2, 0, 2, 1, 3, 4, 4, 2, 1, 3, 0, 2, 3, 4, 1, 3, 3, 1, 4, 4, 4, 4, 2, 2, 0, 2, 3, 3, 4, 0, 3, 4, 4, 3, 2, 2, 2, 2, 2, 1, 0, 2, 1, 4, 4, 3, 0, 2, 3, 0, 3, 0, 1, 4, 4, 1, 2, 4, 3, 0, 1, 2, 0, 2, 0, 2, 4, 3, 4, 0, 0, 2, 2, 3, 0, 3, 4, 0, 4, 3, 2, 4, 3, 4, 3, 3, 4, 3, 1, 0, 2, ]  }
   ];
 
-function generateRandom() {
+function generateRandom( nRows ) {
     let randomData = [ 
         { name: "Random X", min: Infinity, max: -Infinity, values: [] },
         { name: "Random Y", min: Infinity, max: -Infinity, values: [] },
@@ -23,7 +23,6 @@ function generateRandom() {
         { name: "category", names: [], values: [] }
     ];
 
-    let nRows = 1000;
     let nCategories = 12;
     for (let i = 0; i < nCategories; i++ ) {
         randomData[ 3 ].names[ i ] = "Category" + ( i + 1 );
@@ -122,13 +121,15 @@ function createTextGeometry( text, font, size ) {
 function makeLegend( catColumn ) {
     // Find legend and add categories
     let legend = document.getElementById('legend');
+    let legendTitle = document.getElementById('legend-title');
+    legendTitle.innerHTML = catColumn.name;
     for ( let i = 0; i < catColumn.names.length; i++ ) {
         let li = document.createElement( 'li' );
         let ball = document.createElement( 'div' );
         ball.setAttribute('class','ball');
         ball.style.backgroundColor = catColumn.categoryColors[ i ].getStyle();
         li.appendChild( ball );
-        var t = document.createTextNode(catColumn.names[ i ]);
+        var t = document.createTextNode( catColumn.names[ i ]);
         li.appendChild( t );
         legend.appendChild( li );
     }
@@ -236,7 +237,9 @@ function changeData() {
     switch ( dataSelector.selectedIndex ) {
     case 0:     columns = carsData;         break;
     case 1:     columns = convertIris();    break; // TODO: cache once converted?
-    default:    columns = generateRandom(); break;
+    case 2:     columns = generateRandom( 1000 ); break;
+    case 3:     columns = generateRandom( 5000 ); break;
+    default:    columns = generateRandom( 25000 ); break;
     }
     let particleSystem = scene.getObjectByName('particleSystem');
     let particleGeo = particleSystem.geometry;
@@ -502,6 +505,7 @@ function addTickLabels( scene, whichAxis, axis, font, mat ) {
 
 // scene
 var scene = new THREE.Scene();
+var renderer, camera; // Made global for updating window size.
 try {
 function init() {
      var stats = new Stats();
@@ -510,14 +514,16 @@ function init() {
     var gui = new dat.GUI(); // UI controls
 
 	// camera
-	var camera = new THREE.PerspectiveCamera(
-		50, // field of view
+	camera = new THREE.PerspectiveCamera(
+		45, // field of view
 		window.innerWidth / window.innerHeight, // aspect ratio
 		1, // near clipping plane
 		10000 // far clipping plane
-	);
-    camera.position.z = 3500;
-    camera.position.y = 1500;
+    );
+    
+    scene.position.set( 0, 200, 0 );
+    camera.position.set( 1300, 1000, 3600 );
+    camera.updateMatrix();
     
     let particleGeo = makeParticleGeo( columns );
     let particleMat =  makeParticleMaterial();
@@ -638,7 +644,7 @@ function init() {
     }); // end font load function
 
 	// renderer
-	var renderer = new THREE.WebGLRenderer();
+	renderer = new THREE.WebGLRenderer();
 	renderer.setSize(window.innerWidth, window.innerHeight - 50);
 
 	renderer.setClearColor('rgb(200, 200, 200)');
@@ -651,6 +657,8 @@ function init() {
     update(renderer, scene, camera, controls, stats);
     
     makeLegend( columns[ 3 ]);
+
+    window.addEventListener( 'resize', onWindowResize, false );
 
 	return scene;
 }
@@ -668,6 +676,12 @@ function update(renderer, scene, camera, controls, stats) {
 	requestAnimationFrame(function() {
 		update(renderer, scene, camera, controls, stats);
 	});
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
 if (Detector.webgl) {

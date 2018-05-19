@@ -24,15 +24,19 @@
 			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 			position:absolute;
 			top: 16px;
-			right: 16px;
+			right: 32px;
+			padding-right: 10px;
+			background: rgba(250,250,250,.5);
+			border:solid 2px rgba(10,10,10,.2);
+			border-radius: 5px;
 		}
 		#legend-title {
 			text-align: center;
-			font-weight:bold;
+			font-weight: 500;
 		}	
 		#legend { list-style: none; 
-			-webkit-padding-start: 0px;
-			-webkit-margin-before: px;
+			-webkit-padding-start: 3px;
+			-webkit-margin-before: 3px;
 		}
 		#legend span { border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px; }
 		.ball {
@@ -55,7 +59,9 @@
 	<select id="select-data" onchange="changeData()">
 		<option>Cars</option>
 		<option>Iris</option>
-		<option>Random Data</option>
+		<option>Random 1000</option>
+		<option>Random 5000</option>
+		<option>Random 25000</option>
 	</select>
 	<div id="webgl">
 		<div id="legend-container">
