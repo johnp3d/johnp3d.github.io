@@ -5,10 +5,48 @@
 	<style type="text/css">
 		html, body {margin: 0; padding: 0; overflow:hidden}
 		#container { background-color: rgb(216, 224, 226); 
-			color:black; text-align: center; font:200; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    		width: 100%; height:100%; height: 1.8rem; display:block }
+			color:black; 
+			text-align: center; 
+			font:200; 
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			width: 100%; 
+			height:100%; 
+			height: 1.8rem; 
+			display:flex;
+			position:relative;
+		}
 		label { margin-left: 1rem;}	
-		#select-dataset { margin-left: 3rem; margin-top: 1px; }	
+		#select-dataset { margin-left: 3rem; margin-top: 1px; }
+		#webgl {
+			position:relative;
+		}
+		#legend-container {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			position:absolute;
+			top: 16px;
+			right: 16px;
+		}
+		#legend-title {
+			text-align: center;
+			font-weight:bold;
+		}	
+		#legend { list-style: none; 
+			-webkit-padding-start: 0px;
+			-webkit-margin-before: px;
+		}
+		#legend span { border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px; }
+		.ball {
+			display: inline-block;
+			width: 10px;
+			height: 10px;
+			margin: 3px 6px 0;
+			border-radius: 50%;
+			box-shadow: inset -3px -3px 3px rgba(0, 0, 0, 0.7);
+			background-image: -webkit-linear-gradient(-45deg, rgba(255,255,255,.1) 0%, transparent 100%);
+			background-image: -moz-linear-gradient(-45deg, rgba(255,255,255,.1) 0%, transparent 100%);  
+			background-image: -o-linear-gradient(-45deg, rgba(255,255,255,.1) 0%, transparent 100%);
+			background-image: -ms-linear-gradient(-45deg, rgba(255,255,255,.1) 0%, transparent 100%);
+		}
 	</style>
 </head>
 <body>
@@ -19,7 +57,13 @@
 		<option>Iris</option>
 		<option>Random Data</option>
 	</select>
-	<div id="webgl"></div>
+	<div id="webgl">
+		<div id="legend-container">
+			<div id="legend-title">Legend</div>
+			<ul id="legend">
+			</ul>
+		</div>
+	</div>
 	<!-- </div> -->
 	<script src="./lib/Detector.js"></script>
     <script src="./lib/stats.js"></script>

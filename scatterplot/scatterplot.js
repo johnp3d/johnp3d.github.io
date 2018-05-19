@@ -119,6 +119,32 @@ function createTextGeometry( text, font, size ) {
     return textGeom;
 };
 
+function makeLegend( catColumn ) {
+    // Find legend and add categories
+    let legend = document.getElementById('legend');
+    for ( let i = 0; i < catColumn.names.length; i++ ) {
+        let li = document.createElement( 'li' );
+        let ball = document.createElement( 'div' );
+        ball.setAttribute('class','ball');
+        ball.style.backgroundColor = catColumn.categoryColors[ i ].getStyle();
+        li.appendChild( ball );
+        var t = document.createTextNode(catColumn.names[ i ]);
+        li.appendChild( t );
+        legend.appendChild( li );
+    }
+}
+
+function replaceLegend( catColumn ) {
+    // Find legend and replace categories
+    let legend = document.getElementById('legend');
+    // Remove old categories
+    while ( legend.hasChildNodes()) {
+        legend.removeChild( legend.lastChild );
+    }
+    // Add current categories.
+    makeLegend( catColumn );
+}
+
 function replaceTitles( columns ) {
     let xColumnName = columns[0].name;
     let yColumnName = columns[1].name;
@@ -229,7 +255,8 @@ function changeData() {
     particleSystem.name = 'particleSystem';
 
     replaceTitles( columns );
-    replaceAxesAndGrid( columns, res ); 
+    replaceAxesAndGrid( columns, res );
+    replaceLegend(columns[ 3 ]); 
 }
 
 // Calculate Mesh Coordinates and Colors.
@@ -621,13 +648,15 @@ function init() {
 
 	document.getElementById('webgl').appendChild(renderer.domElement);
 
-	update(renderer, scene, camera, controls, stats);
+    update(renderer, scene, camera, controls, stats);
+    
+    makeLegend( columns[ 3 ]);
 
 	return scene;
 }
 
-} catch {
-    alert("exception")
+} catch( e ) {
+    alert("exception");
 }
 
 function update(renderer, scene, camera, controls, stats) {
