@@ -236,9 +236,10 @@ function changeData() {
     
     switch ( dataSelector.selectedIndex ) {
     case 0:     columns = carsData;         break;
-    case 1:     columns = convertIris();    break; // TODO: cache once converted?
-    case 2:     columns = generateRandom( 1000 ); break;
-    case 3:     columns = generateRandom( 5000 ); break;
+    case 1:     columns = diamondsData;     break;
+    case 2:     columns = convertIris();    break; // TODO: cache once converted?
+    case 3:     columns = generateRandom( 1000 ); break;
+    case 4:     columns = generateRandom( 5000 ); break;
     default:    columns = generateRandom( 25000 ); break;
     }
     let particleSystem = scene.getObjectByName('particleSystem');
