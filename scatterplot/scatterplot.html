@@ -55,6 +55,27 @@
 			background-image: -o-linear-gradient(-45deg, rgba(255,255,255,.1) 0%, transparent 100%);
 			background-image: -ms-linear-gradient(-45deg, rgba(255,255,255,.1) 0%, transparent 100%);
 		}
+		#tip {
+			/* display: inline-block; */
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			position:absolute;
+			bottom: 16px;
+			right: 32px;
+			padding-right: 10px;
+			background: rgba(250,250,250,.5);
+			border:solid 2px rgba(10,10,10,.2);
+			border-radius: 5px;
+		}
+		#x-tip, #y-tip, #z-tip, #cat-tip {
+			margin-left: 10px;
+		}
+		.visibility {
+			display: none;
+		}
+		.visibility.visible {
+			display: block;
+		}
+
 	</style>
 </head>
 <body>
@@ -68,11 +89,18 @@
 		<option>Random 5000</option>
 		<option>Random 25000</option>
 	</select>
+	
 	<div id="webgl">
 		<div id="legend-container">
 			<div id="legend-title">Legend</div>
 			<ul id="legend">
 			</ul>
+		</div>
+		<div id="tip" class="visibility">
+			<p id="x-tip">X</p>
+			<p id="y-tip">Y</p>
+			<p id="z-tip">Z</p>
+			<p id="cat-tip">Cat</p>
 		</div>
 	</div>
 	<!-- </div> -->

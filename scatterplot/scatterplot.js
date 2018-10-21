@@ -375,6 +375,7 @@ function makeParticleGeo( columns ) {
      
     particleGeo.vertices = makeVertices( columns );
     particleGeo.colors = makeColors( columns );
+    particleGeo.computeBoundingBox();
 
     return particleGeo;
 }
@@ -384,7 +385,7 @@ function makeParticleMaterial( columns ) {
     let particleMat = new THREE.PointsMaterial({
         //color: 'rgb(5, 5, 200)',
         vertexColors: THREE.VertexColors,
-        size: 100,
+        size: particleSize,
         //particle texture...
         map: ball,
         alphaTest: 0.7,
@@ -507,6 +508,17 @@ function addTickLabels( scene, whichAxis, axis, font, mat ) {
 // scene
 var scene = new THREE.Scene();
 var renderer, camera; // Made global for updating window size.
+// picking
+var particleSize = 100; 
+var rayCaster,  intersection,
+    threshold = particleSize,
+    toggle = 0;
+var spheres = [];
+var spheresIndex = 0;
+var clock;
+var mouse = new THREE.Vector2();
+
+
 try {
 function init() {
      var stats = new Stats();
@@ -535,11 +547,12 @@ function init() {
     // Grids
     var size = res;
     var step = 10;
-    // TODO: create a legend.
-    // TODO: redo the axes when the dataset changes.
     var xAxis = makeAxis( columns[ 0 ], size ); 
     var yAxis = makeAxis( columns[ 1 ], size );
     var zAxis = makeAxis( columns[ 2 ], size );
+    // Flip zAxis majorStart & majorStep.
+    zAxis.majorStart *= -1;
+    zAxis.majorStep *= -1;
     var gridXZ = new AxisGrid([ zAxis, xAxis ], size );
     var gridXY = new AxisGrid([ yAxis, xAxis ], size );
     var gridYZ = new AxisGrid([ zAxis, yAxis ], size );
@@ -655,6 +668,19 @@ function init() {
 
 	document.getElementById('webgl').appendChild(renderer.domElement);
 
+    // Picking
+    rayCaster = new THREE.Raycaster();
+    rayCaster.params.Points.threshold = threshold;
+    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    clock = new THREE.Clock();
+    let sphereGeometry = new THREE.SphereBufferGeometry( 0.1, 32, 32 );
+    let sphereMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+    for ( let i = 0; i < 40; i++ ) {
+        let sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+        scene.add( sphere );
+        spheres.push( sphere );
+    }
+
     update(renderer, scene, camera, controls, stats);
     
     makeLegend( columns[ 3 ]);
@@ -668,15 +694,76 @@ function init() {
     alert("exception");
 }
 
-function update(renderer, scene, camera, controls, stats) {
+function update( renderer, scene, camera, controls, stats ) {
     controls.update();
     /* stats.update(); */
 
-    renderer.render(scene, camera);
+    // Picking
+    let particleSystem = scene.getObjectByName('particleSystem');
+    rayCaster.setFromCamera( mouse, camera );
+    var intersections = rayCaster.intersectObjects( [ particleSystem ] );
+
+    let tip = document.getElementById('tip');
+    intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+    if  ( intersection ) {
+        //console.dir( intersection.index );
+        
+        let i = intersection.index;
+        let xTip = document.getElementById('x-tip');
+        xTip.innerHTML = columns[ 0 ].name + ": " +  columns[ 0 ].values[ i ];
+        let yTip = document.getElementById('y-tip');
+        yTip.innerHTML = columns[ 1 ].name + ": " +  columns[ 1 ].values[ i ];
+        let zTip = document.getElementById('z-tip');
+        zTip.innerHTML = columns[ 2 ].name + ": " +  columns[ 2 ].values[ i ];
+        let catTip = document.getElementById('cat-tip');
+        catTip.innerHTML = columns[ 3 ].name + ": " +  columns[ 3 ].names[ columns[ 3 ].values[ i ]];
+        tip.classList.add('visible');
+        //for ( let j = 0; j < 3; j++ ) {
+        //    console.log( columns[ j ].name + ":" +  columns[ j ].values[ i ]);
+        //}
+    } else {
+        // let xTip = document.getElementById('x-tip');
+        // xTip.innerHTML = columns[ 0 ].name + ":";
+        // let yTip = document.getElementById('y-tip');
+        // yTip.innerHTML = columns[ 1 ].name + ":";
+        // let zTip = document.getElementById('z-tip');
+        // zTip.innerHTML = columns[ 2 ].name + ":";
+        // let catTip = document.getElementById('cat-tip');
+        // catTip.innerHTML = columns[ 3 ].name + ":";
+        tip.classList.remove('visible');
+    }
+
+    //for ( var i = 0; i < intersections.length; i++ ) {
+
+		//intersections[ i ].object.material.color.set( 0xff0000 );
+
+    //}
+
+ /*   intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+    if ( toggle > 0.02 && intersection !== null) {
+        spheres[ spheresIndex ].position.copy( intersection.point );
+        spheres[ spheresIndex ].scale.set( 1, 1, 1 );
+        spheresIndex = ( spheresIndex + 1 ) % spheres.length;
+        toggle = 0;
+    }
+    for ( var i = 0; i < spheres.length; i++ ) {
+        var sphere = spheres[ i ];
+        sphere.scale.multiplyScalar( 0.98 );
+        sphere.scale.clampScalar( 0.01, 1 );
+    }
+    toggle += clock.getDelta();
+*/
+    renderer.render( scene, camera );
 	
-	requestAnimationFrame(function() {
-		update(renderer, scene, camera, controls, stats);
+	requestAnimationFrame( function() {
+		update( renderer, scene, camera, controls, stats );
 	});
+}
+
+function onDocumentMouseMove( event ) {
+    event.preventDefault();
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
 function onWindowResize() {
