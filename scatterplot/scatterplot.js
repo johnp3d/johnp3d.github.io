@@ -169,14 +169,19 @@ function replaceTitles( columns ) {
     zAxisTitle.geometry = createTextGeometry( zColumnName, loadedFont );
 }
 
-function replaceAxesAndGrid( columns, size ) {
+function replaceAxesAndGrid( columns, size, axes ) {
 
     var xAxis = makeAxis( columns[ 0 ], size ); 
     var yAxis = makeAxis( columns[ 1 ], size );
     var zAxis = makeAxis( columns[ 2 ], size );
-    // var gridXZ = new AxisGrid([ zAxis, xAxis ], size );
-    // var gridXY = new AxisGrid([ yAxis, xAxis ], size );
-    // var gridYZ = new AxisGrid([ zAxis, yAxis ], size );
+    // Flip zAxis majorStart & majorStep.
+    zAxis.majorStart *= -1;
+    zAxis.majorStep *= -1;
+
+    // return axes
+    axes[ 0 ] = xAxis;
+    axes[ 1 ] = yAxis;
+    axes[ 2 ] = zAxis;
 
     // XZ Grid.
     let gridXZ = scene.getObjectByName('gridXZ');
@@ -242,9 +247,14 @@ function changeData() {
     case 4:     columns = generateRandom( 5000 ); break;
     default:    columns = generateRandom( 25000 ); break;
     }
+
+
+    replaceTitles( columns );
+    var axes = [];
+    replaceAxesAndGrid( columns, res, axes );
     let particleSystem = scene.getObjectByName('particleSystem');
     let particleGeo = particleSystem.geometry;
-    let vertices = makeVertices( columns );
+    let vertices = makeVertices( columns, axes );
     let colors = makeColors( columns );
     // Can't just replace vertices and colors. 
     // Need to dispose of the geometry and create a new one.
@@ -258,8 +268,6 @@ function changeData() {
     scene.add( particleSystem );
     particleSystem.name = 'particleSystem';
 
-    replaceTitles( columns );
-    replaceAxesAndGrid( columns, res );
     replaceLegend(columns[ 3 ]); 
 }
 
@@ -268,14 +276,17 @@ function changeData() {
 const res = 2000;
 const pad = 200; // keep away from walls 
 // Convert values to coordinate space.
-function scaleColumn ( column ) {
+function scaleColumn ( column, axis ) {
     let values = column.values;
     let n = values.length;
     let coords = [];
-    let min = column.min;
-    let max = column.max;
-    let scaleFactor = ( res - 2 * pad ) / ( max - min );
-    let offset = pad - res / 2 ;
+    let min = axis.worldStart;
+    let max = axis.worldEnd;
+    //console.log( "data min max", column.min, column.max );
+    //console.log( "axis min max", axis.worldStart, axis.worldEnd );
+
+    let scaleFactor = res  / ( max - min ); //( res - 2 * pad ) / ( max - min );
+    let offset = -res / 2 ; //   pad - res / 2 ;
       
     for ( let i = 0; i < n; i++ ) {
         coords[ i ] = offset + scaleFactor * ( values[ i ] - min ) ; 
@@ -284,9 +295,9 @@ function scaleColumn ( column ) {
     column.coords = coords;
 }
 
-function scaleColumns( columns ) {
+function scaleColumns( columns, axes ) {
     for( let i = 0; i < 3; i++ ) {
-        scaleColumn( columns[ i ]);
+        scaleColumn( columns[ i ], axes[ i ]);
     }
 }
 
@@ -349,9 +360,9 @@ var sceneFolder = gui.addFolder( 'Scene' );
     sceneFolder.add( particleMat, 'size', 20, 200 );
 }
 
-function makeVertices( columns ) {
+function makeVertices( columns, axes ) {
     let vertices = [];
-    scaleColumns( columns );
+    scaleColumns( columns, axes );
    
     let particleCount = columns[ 0 ].values.length;
     let xCoords = columns[ 0 ].coords;
@@ -370,10 +381,10 @@ function makeColors( columns ) {
     return columns[ 3 ].colors;
 } 
 
-function makeParticleGeo( columns ) {
+function makeParticleGeo( columns, axes ) {
     let particleGeo = new THREE.Geometry();
      
-    particleGeo.vertices = makeVertices( columns );
+    particleGeo.vertices = makeVertices( columns, axes );
     particleGeo.colors = makeColors( columns );
     particleGeo.computeBoundingBox();
 
@@ -439,8 +450,9 @@ function makeAxis( column, size ) {
         nMajor : nMajor, 
         majorStart:  -size / 2,
         majorStep: majorStep,
-        // world coords used for labeling.
+        // world coords used for labeling and point scaling.
         worldStart: scaleMin,
+        worldEnd: scaleMax,
         worldStep: step  
     };
 }
@@ -538,13 +550,7 @@ function init() {
     camera.position.set( 1300, 1000, 3600 );
     camera.updateMatrix();
     
-    let particleGeo = makeParticleGeo( columns );
-    let particleMat =  makeParticleMaterial();
-    let particleSystem = new THREE.Points( particleGeo, particleMat );
-    particleSystem.name = 'particleSystem';
-    scene.add( particleSystem );
-
-    // Grids
+    // Axes and scaling.
     var size = res;
     var step = 10;
     var xAxis = makeAxis( columns[ 0 ], size ); 
@@ -553,6 +559,15 @@ function init() {
     // Flip zAxis majorStart & majorStep.
     zAxis.majorStart *= -1;
     zAxis.majorStep *= -1;
+
+    // Particle system (points)
+    let particleGeo = makeParticleGeo( columns, [ xAxis, yAxis, zAxis ] );
+    let particleMat =  makeParticleMaterial();
+    let particleSystem = new THREE.Points( particleGeo, particleMat );
+    particleSystem.name = 'particleSystem';
+    scene.add( particleSystem );
+   
+    // Grids
     var gridXZ = new AxisGrid([ zAxis, xAxis ], size );
     var gridXY = new AxisGrid([ yAxis, xAxis ], size );
     var gridYZ = new AxisGrid([ zAxis, yAxis ], size );
