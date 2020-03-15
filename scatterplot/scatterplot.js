@@ -431,21 +431,6 @@ function makeParticleGeo( columns, axes ) {
     return particleGeo;
 }
 
-// Adjust particle system in case hasCategories has changed.
-function modifyParticleMaterial( columns, material ) {
-    let hasCategories = columns.length > 3;
-    // If we have categories and no vertex colors, enable vertex colors.
-    if ( hasCategories && !material.vertexColors ) {
-        material.vertexColors = THREE.VertexColors;
-        material.color = undefined;
-    } 
-    // If we don't have categories and no overall particle color.
-    if ( !hasCategories && !material.color ) {
-        materialOptions.color = 'rgb(5, 5, 200)';
-        materialOptions.vertexColors = undefined;
-    }
-}
-
 // Build the particle system's material.
 function makeParticleMaterial( columns ) {
     let ball = new THREE.TextureLoader().load('./img/ball.png');
@@ -765,9 +750,12 @@ function init() {
     
     // Only make a legend if we're starting off with a color column. 
     // Will need to add a legend when switching to a dataset with a color column.
-    if ( columns.length > 3 ) {
+    let haveCategories = columns.length > 3;
+    if ( haveCategories ) {
         makeLegend( columns[ 3 ]);
     }
+    // Prepare the tooltip.
+    adjustTooltip( haveCategories );
 
     window.addEventListener( 'resize', onWindowResize, false );
 
