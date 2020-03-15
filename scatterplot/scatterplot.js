@@ -93,7 +93,7 @@ function convertIris(){
     return irisData;
 }
 
-let columns = carsData; // convertIris(); /* simpleData; */
+let columns = carsData;
 let loadedFont;
 let labelMat;
 
@@ -111,6 +111,7 @@ function createTextGeometry( text, font, size ) {
     return textGeom;
 };
 
+// Build the Legend.
 function makeLegend( catColumn ) {
     // Find legend and add categories
     let legend = document.getElementById('legend');
@@ -126,11 +127,16 @@ function makeLegend( catColumn ) {
         li.appendChild( t );
         legend.appendChild( li );
     }
+    // Show the legend.
+    let legendContainer = document.getElementById('legend-container');
+    legendContainer.classList.add('visible');
 }
 
+// Replace the legend with a new categorical column.
 function replaceLegend( catColumn ) {
     // Find legend and replace categories
     let legend = document.getElementById('legend');
+
     // Remove old categories
     while ( legend.hasChildNodes()) {
         legend.removeChild( legend.lastChild );
@@ -139,6 +145,7 @@ function replaceLegend( catColumn ) {
     makeLegend( catColumn );
 }
 
+// Replace the titles for the new columns.
 function replaceTitles( columns ) {
     let xColumnName = columns[0].name;
     let yColumnName = columns[1].name;
@@ -162,6 +169,7 @@ function replaceTitles( columns ) {
     zAxisTitle.geometry = createTextGeometry( zColumnName, loadedFont );
 }
 
+// Replace the axes and grid for the new columns.
 function replaceAxesAndGrid( columns, size, axes ) {
 
     var xAxis = makeAxis( columns[ 0 ], size ); 
@@ -229,18 +237,29 @@ function replaceAxesAndGrid( columns, size, axes ) {
     makeTickLabels( zAxisLabels, "z", zAxis, loadedFont, labelMat );
 }
 
+// Show or hide the category in the tooltip.
+function adjustTooltip( haveCategories ) {
+    let catTip = document.getElementById('cat-tip');
+    if ( haveCategories ) {
+        catTip.classList.add('visible');
+    } else {
+        catTip.classList.remove('visible');
+    }
+}
+
+// Switch the data.
 function changeData() {
     let dataSelector = document.getElementById("select-data");
     
     switch ( dataSelector.selectedIndex ) {
     case 0:     columns = carsData;         break;
-    case 1:     columns = diamondsData;     break;
-    case 2:     columns = convertIris();    break; // TODO: cache once converted?
-    case 3:     columns = generateRandom( 1000 ); break;
-    case 4:     columns = generateRandom( 5000 ); break;
+    case 1:     columns = cytometryData;    break;
+    case 2:     columns = diamondsData;     break;
+    case 3:     columns = convertIris();    break; // TODO: cache once converted?
+    case 4:     columns = generateRandom( 1000 ); break;
+    case 5:     columns = generateRandom( 5000 ); break;
     default:    columns = generateRandom( 25000 ); break;
     }
-
 
     replaceTitles( columns );
     var axes = [];
@@ -248,20 +267,39 @@ function changeData() {
     let particleSystem = scene.getObjectByName('particleSystem');
     let particleGeo = particleSystem.geometry;
     let vertices = makeVertices( columns, axes );
-    let colors = makeColors( columns );
+    // If there's a category column, calculate particle colors.
+    let haveCategories = columns.length > 3;
+    let colors;
+    if ( haveCategories ) {
+        colors = makeColors( columns ); 
+    }
+    
     // Can't just replace vertices and colors. 
     // Need to dispose of the geometry and create a new one.
     particleGeo.dispose();
     particleGeo = new THREE.Geometry();
     particleGeo.vertices = vertices;
-    particleGeo.colors = colors;
+    if ( haveCategories ) {
+        particleGeo.colors = colors;
+    }
+    
     scene.remove( particleSystem );
-    let particleMat = particleSystem.material;
+    particleMat = makeParticleMaterial( columns );
+    guiFolder.remove( particleSizeController );
+    particleSizeController = guiFolder.add( particleMat, 'size', 20, 200 );
     particleSystem = new THREE.Points( particleGeo, particleMat );
     scene.add( particleSystem );
     particleSystem.name = 'particleSystem';
 
-    replaceLegend(columns[ 3 ]); 
+    // Hide the legend in case we may not need it anymore.
+    let legendContainer = document.getElementById('legend-container');
+    legendContainer.classList.remove('visible');
+    // If we have a categorical column, rebuild the legend. 
+    if ( haveCategories ) {
+        replaceLegend( columns[ 3 ]);
+    } 
+    // Prepare the tooltip.
+    adjustTooltip( haveCategories );
 }
 
 // Calculate Mesh Coordinates and Colors.
@@ -333,26 +371,30 @@ function handleColorChange( color1, color2 ) {
 	};
 }
 
+// 
 function guiScene( gui, scene, renderer, wallMat, particleMat ) {
-var sceneFolder = gui.addFolder( 'Scene' );
-	var data = {
+    guiFolder = gui.addFolder( 'Scene' );
+	let data = {
         background: '#888888',
         //show_walls: wallMat.visible,
         walls: wallMat.color.getHex()
 	};
-	var color = new THREE.Color();
-	var colorConvert = handleColorChange( color );
+	let color = new THREE.Color();
+	let colorConvert = handleColorChange( color );
 
-	sceneFolder.addColor( data, 'background' ).onChange( function ( value ) {
+	guiFolder.addColor( data, 'background' ).onChange( function ( value ) {
 		colorConvert( value );
 		renderer.setClearColor( color.getHex() );
     });
     
-    sceneFolder.addColor( data, 'walls' ).onChange( handleColorChange( wallMat.color ));
-    sceneFolder.add( wallMat, 'visible' );
-    sceneFolder.add( particleMat, 'size', 20, 200 );
+    guiFolder.addColor( data, 'walls' ).onChange( handleColorChange( wallMat.color ));
+    guiFolder.add( wallMat, 'visible' );
+
+    // Needs to be removed and re-added when dataset changes.
+    particleSizeController = guiFolder.add( particleMat, 'size', 20, 200 );
 }
 
+// Build the vertices array from the column data.
 function makeVertices( columns, axes ) {
     let vertices = [];
     scaleColumns( columns, axes );
@@ -369,36 +411,64 @@ function makeVertices( columns, axes ) {
     return vertices;
 }
 
+// Build colors array from the column data.
 function makeColors( columns ) {
     setColors( columns );
     return columns[ 3 ].colors;
 } 
 
+// Build the particles geometry from the column data.
 function makeParticleGeo( columns, axes ) {
     let particleGeo = new THREE.Geometry();
      
     particleGeo.vertices = makeVertices( columns, axes );
-    particleGeo.colors = makeColors( columns );
+    // If there's a category column, set particle colors.
+    if ( columns.length > 3 ) {
+        particleGeo.colors = makeColors( columns );
+    }
     particleGeo.computeBoundingBox();
 
     return particleGeo;
 }
 
+// Adjust particle system in case hasCategories has changed.
+function modifyParticleMaterial( columns, material ) {
+    let hasCategories = columns.length > 3;
+    // If we have categories and no vertex colors, enable vertex colors.
+    if ( hasCategories && !material.vertexColors ) {
+        material.vertexColors = THREE.VertexColors;
+        material.color = undefined;
+    } 
+    // If we don't have categories and no overall particle color.
+    if ( !hasCategories && !material.color ) {
+        materialOptions.color = 'rgb(5, 5, 200)';
+        materialOptions.vertexColors = undefined;
+    }
+}
+
+// Build the particle system's material.
 function makeParticleMaterial( columns ) {
     let ball = new THREE.TextureLoader().load('./img/ball.png');
-    let particleMat = new THREE.PointsMaterial({
-        //color: 'rgb(5, 5, 200)',
-        vertexColors: THREE.VertexColors,
+    let materialOptions = {
         size: particleSize,
         //particle texture...
         map: ball,
         alphaTest: 0.7,
         transparent: true,
         depthWrite: true
-    });
-    return particleMat;
+    };
+    // Use vertex colors if we have a category column ...
+    if ( columns.length > 3 ) {
+        materialOptions.vertexColors = THREE.VertexColors;
+    } 
+    // ... otherwise, set all particles one color.
+    else {
+        materialOptions.color = 'rgb(5, 5, 200)';
+    }
+    return new THREE.PointsMaterial( materialOptions );
 }
 
+// Build an axis for a column.
 function makeAxis( column, size ) {
     // Determine a good major tick step.
     // TODO: spreading/destructuring?
@@ -513,8 +583,11 @@ function addTickLabels( scene, whichAxis, axis, font, mat ) {
 // scene
 var scene = new THREE.Scene();
 var renderer, camera; // Made global for updating window size.
+// Made global to modify the GUI when the dataset changes.
+var gui, guiFolder, particleMat, particleSizeController;
+
 // picking
-var particleSize = 100; 
+var particleSize = 100;
 var rayCaster,  intersection,
     threshold = particleSize,
     toggle = 0;
@@ -523,13 +596,12 @@ var spheresIndex = 0;
 var clock;
 var mouse = new THREE.Vector2();
 
-
 try {
 function init() {
      var stats = new Stats();
     // render performance stats using github.com/mrdoob/stats.js
     /* document.body.appendChild( stats.dom ); */
-    var gui = new dat.GUI(); // UI controls
+    gui = new dat.GUI(); // UI controls
 
 	// camera
 	camera = new THREE.PerspectiveCamera(
@@ -555,7 +627,7 @@ function init() {
 
     // Particle system (points)
     let particleGeo = makeParticleGeo( columns, [ xAxis, yAxis, zAxis ] );
-    let particleMat =  makeParticleMaterial();
+    particleMat =  makeParticleMaterial( columns );
     let particleSystem = new THREE.Points( particleGeo, particleMat );
     particleSystem.name = 'particleSystem';
     scene.add( particleSystem );
@@ -691,7 +763,11 @@ function init() {
 
     update(renderer, scene, camera, controls, stats);
     
-    makeLegend( columns[ 3 ]);
+    // Only make a legend if we're starting off with a color column. 
+    // Will need to add a legend when switching to a dataset with a color column.
+    if ( columns.length > 3 ) {
+        makeLegend( columns[ 3 ]);
+    }
 
     window.addEventListener( 'resize', onWindowResize, false );
 
@@ -724,20 +800,15 @@ function update( renderer, scene, camera, controls, stats ) {
         let zTip = document.getElementById('z-tip');
         zTip.innerHTML = columns[ 2 ].name + ": " +  columns[ 2 ].values[ i ];
         let catTip = document.getElementById('cat-tip');
-        catTip.innerHTML = columns[ 3 ].name + ": " +  columns[ 3 ].names[ columns[ 3 ].values[ i ]];
+        if ( columns.length > 3 ) {
+            catTip.innerHTML = columns[ 3 ].name + ": " +  columns[ 3 ].names[ columns[ 3 ].values[ i ]];
+        }
+       
         tip.classList.add('visible');
-        //for ( let j = 0; j < 3; j++ ) {
+        //for ( let j = 0; j < columns.length; j++ ) {
         //    console.log( columns[ j ].name + ":" +  columns[ j ].values[ i ]);
         //}
     } else {
-        // let xTip = document.getElementById('x-tip');
-        // xTip.innerHTML = columns[ 0 ].name + ":";
-        // let yTip = document.getElementById('y-tip');
-        // yTip.innerHTML = columns[ 1 ].name + ":";
-        // let zTip = document.getElementById('z-tip');
-        // zTip.innerHTML = columns[ 2 ].name + ":";
-        // let catTip = document.getElementById('cat-tip');
-        // catTip.innerHTML = columns[ 3 ].name + ":";
         tip.classList.remove('visible');
     }
 
