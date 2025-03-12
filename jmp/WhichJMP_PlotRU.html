@@ -459,16 +459,20 @@ button:disabled {
 			// The result.
 			const plotName = plotNames[score];
 			const resultText = document.createElement('span');
+			const nextText = document.createElement('p');
 			resultText.textContent = 'You are a '; 
+			nextText.textContent = 'Please grab your prize. TBD';
 			const boldPlotName =  document.createElement('b');
 			boldPlotName.textContent = plotName + ' !';
 			if (result.firstChild) {
 				// overwrite previous result.
 				result.replaceChild(resultText, result.firstChild);
 				result.replaceChild(boldPlotName, result.children[1]);
+				result.replaceChild(nextText, result.children[2]);
 			} else {
 				result.appendChild(resultText);
 				result.appendChild(boldPlotName);
+				result.appendChild(nextText);
 			}
 
 
