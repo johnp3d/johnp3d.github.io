@@ -83,7 +83,7 @@ form {
 }
 
 /* Style for the prompts/questions and result */
-.quiz-prompt, #animalPrompt, #animalPicker, #result {
+.quiz-prompt, #animalPrompt, #animalPicker, #result, #instructions {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 1.2em;
 	color: var(--text-on-light-color);
@@ -116,6 +116,7 @@ button {
 
 #clearButton {
 	margin-top: 10px;
+	margin-bottom: 20px;
 }
 
 /* Add a hover effect for the submit button */
@@ -142,7 +143,10 @@ button:disabled {
 	display: block;
 	width: 200px;
 	padding: 5px;
-	margin: auto;
+	margin-left: auto;
+	margin-top: auto;
+	margin-right: auto;
+	margin-bottom: 40px;
 	border: 1px solid #ccc;
 	border-radius: 4px;
 }
@@ -198,13 +202,26 @@ button:disabled {
 	<label for="animalPicker" id="animalPrompt" style="display: none;">Hmmm, you're complicated. Please pick your favorite animal.</label>
 	<select id="animalPicker" name=animalPicker" style="display: none;"></select>
 
-
-	<div id="result"></div>
+	<div class="center-container">
+		<div id="result"></div>
+	</div>
 
 	<div class="center-container">
 		<img id="base64Image" alt="JMP Plot Icon" style="display: none;">
+		
 	</div>
+	
+	<div id="instructions" style="display: none;">
+		<div class="center-container">
+			<p>Please Grab your Plot sticker, add it to your name badge, and wear it proudly.</p>
+		</div>
+		<div class="center-container">
+			<p>Learn more about your Plot and your compatible colleagues in the "<b>Which JMP Plot are You</b>" booklet.</p>
+		</div>
+	</div>
+	
 	<button type="button" id="clearButton" style="display: none;">Clear answers and try again</button>
+	<div id="pageBottom" style="height: 100px; visibility: hidden;"></div>
 
 	<script>
         // Array of questions and choices
@@ -321,10 +338,13 @@ button:disabled {
             quizForm.appendChild(questionElement);
         });
 
-		// Get the result, icon image, and submit/"Which Plot am I" button elements.
-		const result = document.getElementById('result');
+		// Get the icon image, and submit/"Which Plot am I" button elements.
 		const imgElement = document.getElementById('base64Image');
 		const submitBtn = document.getElementById('submitBtn');
+		// Get the result, instructions, and pageBottom elements, 
+		const result = document.getElementById('result');
+		const instructions = document.getElementById('instructions');
+		const pageBottom = document.getElementById("pageBottom");
 
 		// Need the animal picker in case there is a tie.
 		const animals = [
@@ -361,6 +381,9 @@ button:disabled {
 			// Hide animal Prompt and Picker
 			animalPrompt.style.display = 'none';
 			animalPicker.style.display = 'none';
+
+			// Hide the instructions.
+			instructions.style.display = 'none';
 
 		});
 
@@ -420,7 +443,7 @@ button:disabled {
 
 			// Find the index of the highest score. 
 			let max = Math.max(...scores);
-			// There may be sevaral winners. If there are less than two winners, pick the 
+			// There may be several winners. If there are less than two winners, pick the 
 			// first, otherwise pick the last.
 			let count = scores.filter(value => value === max).length;
 			score = count < 2 ? scores.indexOf(max) : scores.lastIndexOf(max);
@@ -430,7 +453,6 @@ button:disabled {
 			if (count > 2) {
 				animalPrompt.style.display = 'block';
 				// Clear existing options and add just the number needed.
-				//animalPicker.innerHTML = '<option value="" disabled selected>Select an animal</option>';
 				animalPicker.replaceChildren();
 				// Create and add a prompt option element.
 				const option0 = document.createElement('option');
@@ -448,6 +470,10 @@ button:disabled {
 				}
 				animalPicker.disabled = false;
 				animalPicker.style.display = 'block';
+				pageBottom.scrollIntoView({ behavior: "smooth", block: "start" });
+				setTimeout(() => {
+					window.scrollBy({ top: 100, behavior: "smooth" }); // Moves 100 pixels further after initial scroll
+				}, 500); // Adds slight delay after the first scroll
 				await waitForEvent(animalPicker, 'change');
 				let pick = Math.min( parseInt(animalPicker.value), count - 1);
 				console.log("looking up plot using pick " +  pick);
@@ -459,26 +485,20 @@ button:disabled {
 			// The result.
 			const plotName = plotNames[score];
 			const resultText = document.createElement('span');
-			const nextText = document.createElement('p');
+			
 			resultText.textContent = 'You are a '; 
-			nextText.textContent = 'Please grab your prize. TBD';
-			const boldPlotName =  document.createElement('b');
+			const boldPlotName = document.createElement('b');
 			boldPlotName.textContent = plotName + ' !';
 			if (result.firstChild) {
 				// overwrite previous result.
 				result.replaceChild(resultText, result.firstChild);
 				result.replaceChild(boldPlotName, result.children[1]);
-				result.replaceChild(nextText, result.children[2]);
 			} else {
 				result.appendChild(resultText);
 				result.appendChild(boldPlotName);
-				result.appendChild(nextText);
 			}
 
-
 			result.style.display = 'block';
-			
-			// Put the icon in a container to center it horizontally.
 
 			// Set the src attribute to the Base64 string and display the icon, result, and clear/try again button.
 			const plotIcon = plotIcons[score];
@@ -488,6 +508,22 @@ button:disabled {
 			imgElement.style.display = 'block';
 			clearButton.style.display = 'block';
 
+			// Reveal instructions and clear button slowly.
+			instructions.style.opacity = 0;
+			instructions.style.transition = "opacity 1s";
+
+			clearButton.style.opacity = 0;
+			clearButton.style.transition = "opacity 1s";
+
+			setTimeout(() => {
+				instructions.style.opacity = 1;
+				clearButton.style.opacity = 1;
+				// Disable the submit button
+				submitBtn.disabled = true; 
+			}, 1500);
+			instructions.style.display = 'block';
+			pageBottom.scrollIntoView({ behavior: "smooth", block: "start" });
+			
 		}
 	</script>
 
